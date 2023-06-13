@@ -1,117 +1,132 @@
 import bootloader
 from collections import OrderedDict
 import os
+import ulogging
 
-class Config: 
-    
+
+class Config:
+
     def __init__(self):
-        #all variables saved in flash
-        self.boot = bootloader.Bootloader('https://github.com/lipic/wattmeter',"")
-        self.config = OrderedDict()
-        self.config['bt,RESET WATTMETER'] = '0'       #Reg 1000
-        self.config['sw,AUTOMATIC UPDATE'] = '1'   #Reg 1001
-        self.config['txt,ACTUAL SW VERSION']='0'    #Reg 1002
-        self.config['sw,ENABLE CHARGING']='1'        #Reg 1003
-        self.config['in,MAX-CURRENT-FROM-GRID-A']='25'                             #Reg 1004 
-        self.config['in,TIME-ZONE']='2'                         #Reg 1005
-        self.config['in,EVSE-NUMBER']='1' 
-        self.config['in,PV-GRID-ASSIST-A']='0'                   #Reg 1006
-        self.config['btn,PHOTOVOLTAIC'] = '0'       #Reg 1000
-        self.config['sw,ENABLE BALANCING']='1'     #Reg 1007
-        self.config['sw,WHEN AC IN: RELAY ON']='0' #Reg 1008
-        self.config['sw,WHEN OVERFLOW: RELAY ON']='0' #Reg 1008
-        self.config['sw,WHEN AC IN: CHARGING']='0' #Reg 1008
-        self.config['sw,AC IN ACTIVE: HIGH']='0'
-        self.config['sw,TESTING SOFTWARE']='0'      #Reg 1009sw,AC IN ACTIVE: HIGH
-        self.config['sw,Wi-Fi AP'] = '1'          
-        self.config['ERRORS'] = '0'                                            #Reg 1010
-        self.config['ID'] = '0'                                            #Reg 1010
-        self.SETTING_PROFILES = 'setting.dat'
-        self.handle_configure('txt,ACTUAL SW VERSION',self.boot.get_version(""))
+        """
+        Variable saved in flash.
+        """
+        self.boot = bootloader.Bootloader('https://github.com/lipic/wattrouter', "")
+        self.data = OrderedDict()
+        self.data['txt,ACTUAL SW VERSION'] = '0'
 
- 
+        self.data['sw,AUTOMATIC UPDATE'] = '1'
+        self.data['sw,TESTING SOFTWARE'] = '0'
+        self.data['sw,Wi-Fi AP'] = '1'
+        self.data['sw,AC IN ACTIVE: HIGH'] = '0'
+        self.data['sw,WHEN AC IN: RELAY ON'] = '0'
+        self.data['sw,WHEN OVERFLOW: RELAY ON'] = '0'
+
+        self.data['bt,RESET PV-ROUTER'] = '0'
+        self.data['btn,BOOST-MODE'] = '0'
+
+        self.data['in,TUV-VOLUME'] = '200'
+        self.data['in,TUV-POWER'] = '2200'
+        self.data['in,NIGHT-BOOST'] = '64800'
+        self.data['in,NIGHT-TEMPERATURE'] = '55'
+        self.data['in,MORNING-BOOST'] = '21600'
+        self.data['in,MORNING-TEMPERATURE'] = '40'
+        self.data['in,BOOST-TIMEOUT'] = '120'
+        self.data['in,TIME-ZONE'] = '2'
+
+        self.data['BOOST'] = '0'
+        self.data['ERRORS'] = '0'
+        self.data['ID'] = '0'
+        self.data['TYPE'] = '3'
+
+        self.logger = ulogging.getLogger("__config__")
+        if int(self.data['sw,TESTING SOFTWARE']) == 1:
+            self.logger.setLevel(ulogging.DEBUG)
+        else:
+            self.logger.setLevel(ulogging.INFO)
+
+        self.setting_profile = 'setting.dat'
+        self.handle_configure('txt,ACTUAL SW VERSION', self.boot.get_version(""))
+
     # Update self.config from setting.dat and return dict(config)
-    def getConfig(self):
+    def get_config(self) -> None:
         setting = {}
         try:
             setting = self.read_setting()
         except OSError:
             setting = {}
 
-        if len(setting) != len(self.config):
-            with open(self.SETTING_PROFILES, 'w') as filetowrite:
-                filetowrite.write('')
-                filetowrite.close()
-                
-            for i in self.config: 
+        if len(setting) != len(self.data):
+            with open(self.setting_profile, 'w') as file:
+                file.write('')
+                file.close()
+
+            for i in self.data:
                 if i in setting:
-                    if self.config[i] != setting[i]:
-                        self.config[i] = setting[i]
+                    if self.data[i] != setting[i]:
+                        self.data[i] = setting[i]
             setting = {}
-        
-        for i in self.config: 
+
+        for i in self.data:
             if i in setting:
-                if self.config[i] != setting[i]:
-                    self.config[i] = setting[i]   
+                if self.data[i] != setting[i]:
+                    self.data[i] = setting[i]
             else:
-                setting[i] = self.config[i]
+                setting[i] = self.data[i]
                 self.write_setting(setting)
-        
-        if self.config['ID'] == '0':
-            id = bytearray(os.urandom(4))
-            randId = ''
-            for i in range(0,len(id)):
-                randId+= str((int(id[i])))
-            self.config['ID'] = randId[-5:]
-            self.handle_configure('ID', self.config['ID'])
-            
-        return self.config
+
+        if self.data['ID'] == '0':
+            _id = bytearray(os.urandom(4))
+            rand_id = ''
+            for i in range(0, len(_id)):
+                rand_id += str((int(_id[i])))
+            self.data['ID'] = rand_id[-5:]
+            self.handle_configure('ID', self.data['ID'])
+
+        return self.data
 
     # Update self.config. Write new value to self.config and to file setting.dat
-    def handle_configure(self,variable, value):
+    def handle_configure(self, variable: str, value: str) -> bool:
         try:
-            self.handleDifferentRequests(variable,value)
-            if len(variable)>0:
+            if variable == 'bt,RESET PV-ROUTER':
+                from machine import reset
+                reset()
+
+            if len(variable) > 0:
                 try:
                     setting = self.read_setting()
                 except OSError:
-                    setting = {}
-                
+                    setting: dict = {}
+
                 if setting[variable] != value:
                     setting[variable] = value
                     self.write_setting(setting)
-                    self.getConfig()
+                    self.get_config()
                     return True
             else:
                 return False
         except Exception as e:
-            print(e)
-            
-    def handleDifferentRequests(self,variable,value):
-        if variable == 'bt,RESET WATTMETER':
-            from machine import reset
-            reset()
+            self.logger.error("handle_configure exception: {}.".format(e))
+            return False
 
-    #If exist read setting from setting.dat, esle create setting
-    def read_setting(self):
-        with open(self.SETTING_PROFILES) as f:
-            lines = f.readlines()
-        setting = {}
+    def read_setting(self) -> dict:
+        with open(self.setting_profile) as f:
+            lines: list[str] = f.readlines()
+        setting: dict = {}
         try:
             for line in lines:
                 variable, value = line.strip("\n").split(";")
                 setting[variable] = value
             return setting
-        
+
         except Exception as e:
-            self.write_setting(self.config)
-            return self.config
+            self.logger.error("read_setting exception: {}.".format(e))
+            self.write_setting(self.data)
+            return self.data
 
     # method for write data to file.dat
-    def write_setting(self,setting):
-        lines = []
+    def write_setting(self, setting: OrderedDict[str, str]) -> None:
+        lines: list[str] = []
         for variable, value in setting.items():
             lines.append("%s;%s\n" % (variable, value))
-        with open(self.SETTING_PROFILES, "w") as f:
+        with open(self.setting_profile, "w") as f:
             f.write(''.join(lines))
-            
