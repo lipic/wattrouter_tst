@@ -106,7 +106,7 @@ class Wattmeter:
                     self.data_layer.data["Es"][96] = self.data_layer.data['HDO']
 
         if (self.last_day != int(time.localtime()[2])) and self.time_init and self.time_offset:
-            day = {("{0:02}/{1:02}/{2}".format(self.last_month, self.last_day, str(self.last_year)[-2:])): [
+            day: dict = {("{0:02}/{1:02}/{2}".format(self.last_month, self.last_day, str(self.last_year)[-2:])): [
                 self.data_layer.data["E1_P_day"], self.data_layer.data["E1_N_day"], self.data_layer.data["E_TUV_day"]]}
             async with self.wattmeter_interface as w:
                 await w.write_wattmeter_register(102, [1])
@@ -171,6 +171,15 @@ class Wattmeter:
         except Exception as e:
             self.logger.error("Exception: {}. UART is probably not connected.".format(e))
 
+    def negotiation_relay(self):
+        if self.relay.value():
+            self.relay.off()
+            self.data_layer.data["RELAY"] = 0
+            return False
+        else:
+            self.relay.on()
+            self.data_layer.data["RELAY"] = 1
+            return True
 
 class DataLayer:
     def __str__(self) -> json:
@@ -266,11 +275,11 @@ class FileHandler:
                     last_year = int(line[2])
 
                 if last_month != int(line[0]):
-                    if len(energy) < 36:
-                        energy.append("{}/{}:[{},{},{}]".format(last_month, last_year, positive_energy, negative_energy, boiler_energy))
-                    else:
+                    if len(energy) >= 36:
                         energy = energy[1:]
-                        energy.append("{}/{}:[{},{},{}]".format(last_month, last_year, positive_energy, negative_energy, boiler_energy))
+
+                    energy.append("{}/{}:[{},{},{}]".format(last_month, last_year, positive_energy, negative_energy, boiler_energy))
+
                     positive_energy = 0
                     negative_energy = 0
                     boiler_energy = 0
@@ -282,11 +291,10 @@ class FileHandler:
                 boiler_energy += int(line[5])
                 collect()
 
-            if len(energy) < 36:
-                energy.append("{}/{}:[{},{},{}]".format(last_month, last_year, positive_energy, negative_energy, boiler_energy))
-            else:
+            if len(energy) >= 36:
                 energy = energy[1:]
-                energy.append("{}/{}:[{},{},{}]".format(last_month, last_year, positive_energy, negative_energy, boiler_energy))
+            energy.append("{}/{}:[{},{},{}]".format(last_month, last_year, positive_energy, negative_energy, boiler_energy))
+
             if energy is None:
                 return []
             return energy

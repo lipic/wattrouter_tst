@@ -110,7 +110,7 @@ class WebServerApp:
             for i in req.form:
                 i = json.loads(i)
                 if list(i.keys())[0] == 'relay':
-                    if self.wattmeter.negotiationRelay():
+                    if self.wattmeter.negotiation_relay():
                         datalayer = {"process": 1}
                     else:
                         datalayer = {"process": 0}
