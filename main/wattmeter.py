@@ -10,7 +10,7 @@ from collections import OrderedDict
 class Wattmeter:
 
     def __init__(self, wattmeter_interface, config: OrderedDict[str, str]):
-        self.relay: Pin = Pin(25, Pin.OUT)
+        self.relay: Pin = Pin(19, Pin.OUT)
         self.wattmeter_interface = wattmeter_interface
         self.data_layer: DataLayer = DataLayer()
         self.daily_consumption: str = 'daily_consumption.dat'

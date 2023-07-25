@@ -14,6 +14,7 @@ MODE_HDO_BOOST: int = 3
 PWM_MAX: int = 1023
 PWM_OFF: int = 0
 
+OVERFLOW_TIMEOUT: int = 120 # v sekundach
 
 class Regulation:
 
@@ -31,6 +32,7 @@ class Regulation:
         self.tuv_energy_morning: int = 0
         self.overflow_limit: int = -30  # limit pro handlovani pretoku
         self.delay: int = 0
+        self.overflow_checker_cnt: int = 0
 
         self.target_duty: int = 0
         self.sec_night_boost: int = 0  # kolik sekund se musinahrivat aby se dosahlo teloty boostu
@@ -47,25 +49,21 @@ class Regulation:
         """
         Regulation function. 100% pwm = 1023, 0% pwm = 0
         """
-        self.logger.debug("#################################################")
+        
+        #self.logger.debug("#################################################")
+        # prepocet vykonu z uint16 na int16
         if power > 32767:  # max kladne cislo
             power = power - 65536  # uint16 vcetne 0
 
-        actual_time: int = hour * 3600 + minute * 60
-        '''
-        self.config.data['btn,BOOST-MODE']
-        self.config.data['in,TUV-VOLUME']
-        self.config.data['in,TUV-POWER']
-        self.config.data['in,NIGHT-BOOST']
-        self.config.data['in,NIGHT-TEMPERATURE']
-        self.config.data['in,MORNING-BOOST']
-        self.config.data['in,MORNING-TEMPERATURE']
-        self.config.data['in,BOOST-TIMEOUT']
-        self.config.data['BOOST']
-        '''
+        actual_time: int = hour * 3600 + minute * 60 # kolikata sekunda od pulnoci
+         
         self.power_step = int(self.config.data['in,TUV-POWER']) / (1000 / FREQUENCY / 20)  # 1000ms 20ms
         self.power_step_count = int(self.config.data['in,TUV-POWER']) / self.power_step
         self.power_hyst = self.power_step / 4  # hystereze regulace 1/4 minimalniho kroku
+        self.overflow_limit = -int(self.config.data['in,OVERFLOW-OFFSET'])
+        if self.power_hyst > (-self.overflow_limit):
+            self.power_hyst = (-self.overflow_limit) - 10 # z te konstanty udelat parametr?
+        
         # vypocet energie pro nocni boost
         self.tuv_energy_night = WATTER_CONST * int(self.config.data['in,TUV-VOLUME']) * (
                     int(self.config.data['in,NIGHT-TEMPERATURE']) - self.temp_input) / 3600
@@ -80,7 +78,7 @@ class Regulation:
         self.logger.debug("Power = {}W".format(power))
         
         self.delay += 1
-        if self.delay > 2:
+        if self.delay > 2: #regulaci je potreba zpomalit, protoze jinak kmita
             # regulace podle pretoku celych periodach 20ms
             if power < self.overflow_limit:
                 self.delay = 0
@@ -89,13 +87,18 @@ class Regulation:
                     self.target_power += self.power_step
                     if self.target_power > int(self.config.data['in,TUV-POWER']):
                         self.target_power = int(self.config.data['in,TUV-POWER'])
-            elif power > self.power_hyst:
+            elif power > (self.overflow_limit + self.power_hyst):
                 self.delay = 0
                 self.logger.debug("Ubírám")
                 self.target_power -= self.power_step
                 if self.target_power < 0:
                     self.target_power = 0
-
+               
+        # jednou za nejakou periodu nastav SSR na 0, aby se overilo, zda jsou stale pretoky > overflow_limit
+        if self.delay == 0 and ((actual_time - self.overflow_cnt_checker) > OVERFLOW_TIMEOUT):
+            self.overflow_cnt_checker = actual_time
+            self.target_power = 0
+        
         # pokud je aktivovany nejaky BOOST
         if int(self.config.data['btn,BOOST-MODE']) == MODE_BOOST:
 
@@ -113,8 +116,8 @@ class Regulation:
             if self.get_boost_status(actual_time) and self.wattmeter.data_layer.data['HDO'] != 0:
                 self.target_power = int(self.config.data['in,TUV-POWER'])
                 self.logger.debug("ssr sepnuto casovym boostem a soucasne HDO")
-
-        # manualni boost
+            
+        # manualni boost talcitkem v apce
         if int(self.config.data['BOOST']):
             self.target_power = int(self.config.data['in,TUV-POWER'])
             self.logger.debug("SSR sepnuto manualne v overview")

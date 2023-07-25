@@ -24,6 +24,7 @@ class Config:
         self.data['bt,RESET PV-ROUTER'] = '0'
         self.data['btn,BOOST-MODE'] = '0'
 
+        self.data['in,OVERFLOW-OFFSET'] = '100'
         self.data['in,TUV-VOLUME'] = '200'
         self.data['in,TUV-POWER'] = '2200'
         self.data['in,NIGHT-BOOST'] = '64800'
