@@ -144,7 +144,7 @@ class Wattmeter:
                 for power in self.average_power:
                     actual_power += (power - 65536) if power > 32767 else power
                     count += 1
-                self.data_layer.data['P1'] = int(actual_power/count)
+                self.data_layer.data['P1'] = int(actual_power / count)
                 self.data_layer.data['U1'] = int(((receive_data[6]) << 8) | (receive_data[7]))
                 self.data_layer.data['E1_P_min'] = int(((receive_data[8]) << 8) | (receive_data[9]))
                 self.data_layer.data['E1_N_min'] = int(((receive_data[10]) << 8) | (receive_data[11]))
@@ -181,9 +181,10 @@ class Wattmeter:
             self.data_layer.data["RELAY"] = 1
             return True
 
+
 class DataLayer:
-    def __str__(self) -> json:
-        return json.dumps(self.data)
+    def __str__(self) -> dict:
+        return self.data
 
     def __init__(self) -> None:
         self.data: dict = dict()
@@ -278,7 +279,8 @@ class FileHandler:
                     if len(energy) >= 36:
                         energy = energy[1:]
 
-                    energy.append("{}/{}:[{},{},{}]".format(last_month, last_year, positive_energy, negative_energy, boiler_energy))
+                    energy.append("{}/{}:[{},{},{}]".format(last_month, last_year, positive_energy, negative_energy,
+                                                            boiler_energy))
 
                     positive_energy = 0
                     negative_energy = 0
@@ -293,7 +295,8 @@ class FileHandler:
 
             if len(energy) >= 36:
                 energy = energy[1:]
-            energy.append("{}/{}:[{},{},{}]".format(last_month, last_year, positive_energy, negative_energy, boiler_energy))
+            energy.append(
+                "{}/{}:[{},{},{}]".format(last_month, last_year, positive_energy, negative_energy, boiler_energy))
 
             if energy is None:
                 return []

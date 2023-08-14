@@ -10,6 +10,10 @@ from main import wattmeter
 from main import __config__
 import ulogging
 
+from main.inverters.goodwe import Goodwe
+from main.inverters.solax import Solax
+from main.inverters.huawei import Huawei
+
 EVSE_ERR: int = 1
 WATTMETER_ERR: int = 2
 WEBSERVER_CANCELATION_ERR: int = 4
@@ -26,7 +30,16 @@ class TaskHandler:
         self.config.get_config()
         watt_interface = wattmeter_com_interface.Interface(115200, lock=Lock(30))
         self.wattmeter = wattmeter.Wattmeter(wattmeter_interface=watt_interface, config=self.config)
-        self.web_server_app = web_server_app.WebServerApp(wifi, self.wattmeter, watt_interface, self.config)
+
+        self.inverter = None
+        if int(self.config.data['bti,INVERTER-TYPE']) == 1:
+            self.inverter = Goodwe(wifi, self.config, wattmeter=self.wattmeter)
+        elif int(self.config.data['bti,INVERTER-TYPE']) == 2:
+            self.inverter = Solax(wifi, self.config)
+        elif int(self.config.data['bti,INVERTER-TYPE']) == 3:
+            self.inverter = Huawei(wifi, self.config)
+
+        self.web_server_app = web_server_app.WebServerApp(wifi, self.wattmeter, watt_interface, self.config, self.inverter)
         self.setting_after_new_connection: bool = False
         self.wdt = WDT(timeout=60000)
         self.wifi_manager = wifi
@@ -37,7 +50,7 @@ class TaskHandler:
         self.ap_timeout: int = 600
         self.wifi_manager.turnONAp()
 
-        self.logger = ulogging.getLogger("TaskHandler")
+        self.logger = ulogging.getLogger(__name__)
         if int(self.config.data['sw,TESTING SOFTWARE']) == 1:
             self.logger.setLevel(ulogging.DEBUG)
         else:
@@ -49,13 +62,9 @@ class TaskHandler:
         after: int = mem_free()
         self.logger.debug("Memory before: {} & After: {}".format(before, after))
 
-    async def led_wifi(self) -> None:
+    async def led_handler(self) -> None:
         while True:
             await self.led_wifi_handler.led_handler()
-            await asyncio.sleep(0.1)
-
-    async def led_error(self) -> None:
-        while True:
             await self.led_error_handler.led_handler()
             await asyncio.sleep(0.1)
 
@@ -137,13 +146,22 @@ class TaskHandler:
             self.mem_free()
             await asyncio.sleep(1)
 
+    async def inverter_handler(self) -> None:
+        while True:
+            if self.wifi_manager.isConnected():
+                if self.inverter is not None and self.inverter.connection_status == 0:
+                    await self.inverter.scann()
+                if self.inverter is not None:
+                    await self.inverter.run()
+            await asyncio.sleep(3)
+
     def main_task_handler_run(self) -> None:
         loop = asyncio.get_event_loop()
         loop.create_task(self.wifi_handler())
         loop.create_task(self.system_handler())
         loop.create_task(self.time_handler())
         loop.create_task(self.interface_handler())
-        loop.create_task(self.led_error())
-        loop.create_task(self.led_wifi())
+        loop.create_task(self.inverter_handler())
+        loop.create_task(self.led_handler())
         loop.create_task(self.web_server_app.web_server_run())
         loop.run_forever()

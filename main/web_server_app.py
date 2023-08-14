@@ -8,11 +8,12 @@ import ulogging
 
 
 class WebServerApp:
-    def __init__(self, wlan, wattmeter, watt_io, setting):
+    def __init__(self, wlan, wattmeter, watt_io, setting, inverter):
         self.watt_io = watt_io
         self.wifi_manager = wlan
         self.ip_address = self.wifi_manager.getIp()
         self.wattmeter = wattmeter
+        self.inverter = inverter
         self.port = 8000
         self.datalayer = dict()
         self.setting = setting
@@ -124,8 +125,14 @@ class WebServerApp:
             yield from picoweb.jsonify(resp, datalayer)
 
         else:
+            merged_dict = self.wattmeter.data_layer.__str__()
+            if self.inverter:
+                merged_dict.update(self.inverter.data_layer.__str__())
+
+            merged_json = json.dumps(merged_dict)
             yield from picoweb.start_response(resp, "application/json")
-            yield from resp.awrite(self.wattmeter.data_layer.__str__())
+            yield from resp.awrite(merged_json)
+            collect()
 
     def update_wificlient(self, req, resp) -> None:
         collect()

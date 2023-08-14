@@ -38,6 +38,7 @@ class Regulation:
         self.sec_night_boost: int = 0  # kolik sekund se musinahrivat aby se dosahlo teloty boostu
         self.sec_morning_boost: int = 0
         self.power_simulator: int = 0
+        self.overflow_cnt_checker: int = 0
 
         self.logger = ulogging.getLogger("Regulation")
         if int(self.config.data['sw,TESTING SOFTWARE']) == 1:
