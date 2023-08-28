@@ -10,10 +10,6 @@ from main import wattmeter
 from main import __config__
 import ulogging
 
-from main.inverters.goodwe import Goodwe
-from main.inverters.solax import Solax
-from main.inverters.huawei import Huawei
-
 EVSE_ERR: int = 1
 WATTMETER_ERR: int = 2
 WEBSERVER_CANCELATION_ERR: int = 4
@@ -33,10 +29,19 @@ class TaskHandler:
 
         self.inverter = None
         if int(self.config.data['bti,INVERTER-TYPE']) == 1:
+            from main.inverters.goodwe import Goodwe
             self.inverter = Goodwe(wifi, self.config, wattmeter=self.wattmeter)
         elif int(self.config.data['bti,INVERTER-TYPE']) == 2:
+            from main.inverters.solax import Solax
             self.inverter = Solax(wifi, self.config)
         elif int(self.config.data['bti,INVERTER-TYPE']) == 3:
+            from main.inverters.victron import Victron
+            self.inverter = Victron(wifi, self.config, wattmeter=self.wattmeter)
+        elif int(self.config.data['bti,INVERTER-TYPE']) == 4:
+            from main.inverters.huawei import Huawei
+            self.inverter = Huawei(wifi, self.config)
+        elif int(self.config.data['bti,INVERTER-TYPE']) == 5:
+            from main.inverters.huawei import Huawei
             self.inverter = Huawei(wifi, self.config)
 
         self.web_server_app = web_server_app.WebServerApp(wifi, self.wattmeter, watt_interface, self.config, self.inverter)
@@ -70,7 +75,7 @@ class TaskHandler:
 
     async def time_handler(self) -> None:
         while True:
-            if self.wifi_manager.isConnected() and self.wattmeter.time_init is False:
+            if self.wifi_manager.is_connected() and self.wattmeter.time_init is False:
                 try:
                     self.logger.info("Setting time.")
                     settime()
@@ -95,7 +100,7 @@ class TaskHandler:
         while True:
             try:
                 self.led_wifi_handler.add_state(AP)
-                if self.wifi_manager.isConnected():
+                if self.wifi_manager.is_connected():
                     if self.ap_timeout > 0:
                         self.ap_timeout -= 1
                     elif (int(self.config.data['sw,Wi-Fi AP']) == 0) and self.ap_timeout == 0:
@@ -148,7 +153,7 @@ class TaskHandler:
 
     async def inverter_handler(self) -> None:
         while True:
-            if self.wifi_manager.isConnected():
+            if self.wifi_manager.is_connected():
                 if self.inverter is not None and self.inverter.connection_status == 0:
                     await self.inverter.scann()
                 if self.inverter is not None:

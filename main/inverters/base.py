@@ -123,6 +123,6 @@ class Datalayer:
         self.data["i2"]: int = 0
         self.data["i3"]: int = 0
         self.data["status"]: int = 0
-        self.data["id"]: int = 0
+        self.data["id"]: str = "-,-"
         self.data["ip"]: str = ""
         self.data["type"]: str = ""

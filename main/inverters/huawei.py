@@ -38,7 +38,7 @@ class Huawei(BaseInverter):
     async def scann(self) -> None:
         self.data_layer.data["status"] = 2
         self.modbus_tcp: TCP = await self.scan_network(modbus_port=self.modbus_port,
-                                                       ip_address=self.wifi_manager.getIp(),
+                                                       ip_address=self.wifi_manager.get_ip(),
                                                        slave_addr=1,
                                                        starting_addr=self.device_type,
                                                        number_of_reg=15,
@@ -61,9 +61,9 @@ class Huawei(BaseInverter):
         for i in result:
             if i != 0:
                 device_type = f"{device_type}{chr(i >> 8)}{chr(i & 0xFF)}"
-        self.data_layer.data['id'] = device_type
         self.logger.info(f"Device type: {device_type}")
         if f"{device_type[0].lower()}{device_type[1].lower()}{device_type[2].lower()}" == "sun":
+            self.data_layer.data['id'] = device_type
             return True
         return False
 

@@ -11,7 +11,7 @@ class WebServerApp:
     def __init__(self, wlan, wattmeter, watt_io, setting, inverter):
         self.watt_io = watt_io
         self.wifi_manager = wlan
-        self.ip_address = self.wifi_manager.getIp()
+        self.ip_address = self.wifi_manager.get_ip()
         self.wattmeter = wattmeter
         self.inverter = inverter
         self.port = 8000
@@ -145,7 +145,7 @@ class WebServerApp:
             except:
                 pass
             datalayer = await self.wifi_manager.handle_configure(i["ssid"], i["password"])
-            self.ip_address = self.wifi_manager.getIp()
+            self.ip_address = self.wifi_manager.get_ip()
             datalayer = {"process": datalayer, "ip": self.ip_address}
 
             yield from picoweb.start_response(resp, "application/json")
@@ -186,7 +186,7 @@ class WebServerApp:
         yield from self.app.render_template(resp, "datatable.html", (req,))
 
     def get_esp_id(self, req, resp) -> None:
-        datalayer = {"ID": " PV-router: {}".format(self.setting.get_config()['ID']), "IP": self.wifi_manager.getIp()}
+        datalayer = {"ID": " PV-router: {}".format(self.setting.get_config()['ID']), "IP": self.wifi_manager.get_ip()}
         yield from picoweb.start_response(resp, "application/json")
         yield from resp.awrite(json.dumps(datalayer))
 
