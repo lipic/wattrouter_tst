@@ -36,7 +36,7 @@ class Wattmeter:
 
         self.file_handler = FileHandler(debug=int(self.config.data['sw,TESTING SOFTWARE']))
 
-    async def wattmeter_handler(self) -> None:
+    async def wattmeter_handler(self, inverter_data=None) -> None:
 
         if (self.time_offset is False) and self.time_init:
             self.start_up_time = time.time()
@@ -56,8 +56,8 @@ class Wattmeter:
                                                              time.localtime()[5]))
 
         await self.__read_wattmeter_data(6002, 22)
-        self.regulation.run(hour=time.localtime()[3], minute=time.localtime()[4],
-                            power=self.data_layer.data['P_REGULATION'])
+        battery_soc = inverter_data['soc'] if inverter_data is not None else None
+        self.regulation.run(hour=time.localtime()[3], minute=time.localtime()[4], power=self.data_layer.data['P_REGULATION'], soc=battery_soc)
 
         if (self.last_minute != int(time.localtime()[4])) and self.time_init:
             minute_energy: int = self.data_layer.data['E1_P_min'] - self.data_layer.data['E1_N_min']

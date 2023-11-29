@@ -33,9 +33,15 @@ class Config:
         self.data['in,MORNING-TEMPERATURE'] = '40'
         self.data['in,BOOST-TIMEOUT'] = '120'
         self.data['in,TIME-ZONE'] = '2'
-        self.data['in,SOC'] = '0'
+        self.data['in,STOP-SOC'] = '70'
+
+        self.data['in,POWER-RELAY'] = '1000'
+        self.data['in,TIMEOUT-RELAY'] = '10'
+        self.data['in,RELAY-LOAD'] = '2000'
+
         self.data['bti,INVERTER-TYPE'] = '0'
         self.data['INVERTER_IP_ADDR'] = '0'
+
 
         self.data['BOOST'] = '0'
         self.data['ERRORS'] = '0'

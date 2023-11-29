@@ -27,7 +27,6 @@ class TaskHandler:
         watt_interface = wattmeter_com_interface.Interface(115200, lock=Lock(30))
         self.wattmeter = wattmeter.Wattmeter(wattmeter_interface=watt_interface, config=self.config)
 
-        self.inverter = None
         if int(self.config.data['bti,INVERTER-TYPE']) == 1:
             from main.inverters.goodwe import Goodwe
             self.inverter = Goodwe(wifi, self.config, wattmeter=self.wattmeter)
@@ -41,8 +40,11 @@ class TaskHandler:
             from main.inverters.huawei import Huawei
             self.inverter = Huawei(wifi, self.config)
         elif int(self.config.data['bti,INVERTER-TYPE']) == 5:
-            from main.inverters.huawei import Huawei
-            self.inverter = Huawei(wifi, self.config)
+            from main.inverters.infigy import Infigy
+            self.inverter = Infigy(wifi, self.config)
+        elif int(self.config.data['bti,INVERTER-TYPE']) == 6:
+            from main.inverters.sofar import Sofar
+            self.inverter = Sofar(wifi, self.config)
 
         self.web_server_app = web_server_app.WebServerApp(wifi, self.wattmeter, watt_interface, self.config, self.inverter)
         self.setting_after_new_connection: bool = False
@@ -133,7 +135,10 @@ class TaskHandler:
     async def interface_handler(self) -> None:
         while True:
             try:
-                await self.wattmeter.wattmeter_handler()
+                if self.inverter is not None:
+                    await self.wattmeter.wattmeter_handler(inverter_data=self.inverter.data_layer.data)
+                else:
+                    await self.wattmeter.wattmeter_handler()
                 self.led_error_handler.remove_state(WATTMETER_ERR)
                 self.errors &= ~WATTMETER_ERR
             except Exception as e:

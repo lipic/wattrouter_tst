@@ -15,6 +15,9 @@ class Goodwe(BaseInverter):
         self.data_layer.data["status"] = self.connection_status
         if self.modbus_tcp is not None:
             try:
+                response = self.modbus_tcp.read_holding_registers(slave_addr=1, starting_addr=36055, register_qty=3)
+                self.process_msg(response, starting_addr=36055)
+
                 response = self.modbus_tcp.read_holding_registers(slave_addr=1, starting_addr=36005, register_qty=3)
                 self.process_msg(response, starting_addr=36005)
 
@@ -45,13 +48,19 @@ class Goodwe(BaseInverter):
                                                        callback=self.check_msg)
 
     def process_msg(self, response: tuple, starting_addr: int) -> None:
-        if starting_addr == 36005 and len(response) > 2:
+        if starting_addr == 36055 and len(response) > 2:
             self.data_layer.data["u1"] = self.wattmeter.data_layer.data["U1"]
-            self.data_layer.data["i1"] = int(response[0]*10/self.data_layer.data["u1"]) if self.wattmeter.data_layer.data["U1"] != 0 else 0
+            self.data_layer.data["i1"] = int(response[0])*10 if self.data_layer.data["p1"] > 0 else int(response[0])*-10
             self.data_layer.data["u2"] = self.wattmeter.data_layer.data["U2"]
-            self.data_layer.data["i2"] = int(response[1]*10 / self.data_layer.data["u2"]) if self.wattmeter.data_layer.data["U2"] != 0 else 0
+            self.data_layer.data["i2"] = int(response[1])*10 if self.data_layer.data["p2"] > 0 else int(response[1])*-10
             self.data_layer.data["u3"] = self.wattmeter.data_layer.data["U3"]
-            self.data_layer.data["i3"] = int(response[2]*10 / self.data_layer.data["u3"]) if self.wattmeter.data_layer.data["U3"] != 0 else 0
+            self.data_layer.data["i3"] = int(response[2])*10 if self.data_layer.data["p3"] > 0 else int(response[2])*-10
+
+        if starting_addr == 36005 and len(response) > 2:
+            self.data_layer.data["p1"] = (response[0] - 65535)*-1 if response[0] > 32767 else response[0]*-1
+            self.data_layer.data["p2"] = (response[1] - 65535)*-1 if response[1] > 32767 else response[1]*-1
+            self.data_layer.data["p3"] = (response[2] - 65535)*-1 if response[2] > 32767 else response[2]*-1
+
         elif starting_addr == 37007 and len(response) > 0:
             self.data_layer.data["soc"] = response[0]
 

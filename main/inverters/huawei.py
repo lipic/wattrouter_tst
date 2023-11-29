@@ -47,14 +47,18 @@ class Huawei(BaseInverter):
     def process_msg(self, response: tuple, starting_addr: int) -> None:
 
         if starting_addr == 37101:
-            register_table: dict = self.wattmeter_register_table()
-            for key in register_table:
-                self.data_layer.data[key] = (response[register_table[key] - starting_addr] << 16) | (response[register_table[key] - starting_addr+1])
+            self.data_layer.data["u1"] = int((response[0] << 16) | (response[1]) / 10)
+            self.data_layer.data["u2"] = int((response[2] << 16) | (response[3]) / 10)
+            self.data_layer.data["u3"] = int((response[4] << 16) | (response[5]) / 10)
+            self.data_layer.data["i1"] = -1 * int((response[6] << 16) | (response[7]))
+            self.data_layer.data["i2"] = -1 * int((response[8] << 16) | (response[9]))
+            self.data_layer.data["i3"] = -1 * int((response[10] << 16) | (response[11]))
+            self.data_layer.data["p1"] = int((self.data_layer.data["u1"] * self.data_layer.data["i1"]) / 100)
+            self.data_layer.data["p2"] = int((self.data_layer.data["u2"] * self.data_layer.data["i2"]) / 100)
+            self.data_layer.data["p3"] = int((self.data_layer.data["u3"] * self.data_layer.data["i3"]) / 100)
 
         elif starting_addr == 37004:
-            register_table: dict = self.bms_register_table()
-            for key in register_table:
-                self.data_layer.data[key] = int(response[register_table[key] - starting_addr]/10)
+            self.data_layer.data["soc"] = int(response[0]/10)
 
     def check_msg(self, result: tuple) -> bool:
         device_type = ''

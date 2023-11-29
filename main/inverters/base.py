@@ -93,7 +93,7 @@ class BaseInverter:
 
     async def try_reconnect(self, modbus_port: int, ip_address: str, slave_addr: int, starting_addr: int,
                             number_of_reg: int, callback: callable) -> TCP | None:
-        for i in range(0, 3):
+        for i in range(0, 5):
             try:
                 self.logger.info(f"Try to reconnect on ip address: {ip_address}")
                 result = await self.scan_ip_address(ip_address, modbus_port, slave_addr, starting_addr, number_of_reg,
@@ -106,6 +106,7 @@ class BaseInverter:
             except Exception as e:
                 self.logger.info(e)
                 self.connection_status = UNCONNECTED
+            await asyncio.sleep(2)
         return None
 
 
@@ -122,6 +123,9 @@ class Datalayer:
         self.data["i1"]: int = 0
         self.data["i2"]: int = 0
         self.data["i3"]: int = 0
+        self.data["p1"]: int = 0
+        self.data["p2"]: int = 0
+        self.data["p3"]: int = 0
         self.data["status"]: int = 0
         self.data["id"]: str = "-,-"
         self.data["ip"]: str = ""
