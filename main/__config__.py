@@ -18,8 +18,6 @@ class Config:
         self.data['sw,TESTING SOFTWARE'] = '0'
         self.data['sw,Wi-Fi AP'] = '1'
         self.data['sw,AC IN ACTIVE: HIGH'] = '0'
-        self.data['sw,WHEN AC IN: RELAY ON'] = '0'
-        self.data['sw,WHEN OVERFLOW: RELAY ON'] = '0'
 
         self.data['bt,RESET PV-ROUTER'] = '0'
         self.data['btn,BOOST-MODE'] = '0'

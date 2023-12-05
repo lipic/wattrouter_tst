@@ -27,6 +27,7 @@ class TaskHandler:
         watt_interface = wattmeter_com_interface.Interface(115200, lock=Lock(30))
         self.wattmeter = wattmeter.Wattmeter(wattmeter_interface=watt_interface, config=self.config)
 
+        self.inverter = None
         if int(self.config.data['bti,INVERTER-TYPE']) == 1:
             from main.inverters.goodwe import Goodwe
             self.inverter = Goodwe(wifi, self.config, wattmeter=self.wattmeter)
@@ -67,7 +68,7 @@ class TaskHandler:
         before: int = mem_free()
         collect()
         after: int = mem_free()
-        self.logger.debug("Memory before: {} & After: {}".format(before, after))
+        # self.logger.debug("Memory before: {} & After: {}".format(before, after))
 
     async def led_handler(self) -> None:
         while True:
