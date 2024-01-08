@@ -1,0 +1,23 @@
+{
+  "urls": [
+    ["__config__.py", "github:lipic/lipic/wattrouter_tst/main/__config__.py"],
+    ["task_handler.py", "github:lipic/lipic/wattrouter_tst/main/task_handler.py"],
+    ["web_server_app.py", "github:lipic/lipic/wattrouter_tst/main/web_server_app.py"],
+    ["regulation.py", "github:lipic/lipic/wattrouter_tst/main/regulation.py"],
+    ["wattmeter.py", "github:lipic/lipic/wattrouter_tst/main/wattmeter.py"],
+    ["template/main_html.py", "github:lipic/wattrouter_tst/main/template/main_html.py"],
+    ["template/datatable_html.py", "github:lipic/wattrouter_tst/main/template/datatable_html.py"],
+    ["template/energyChart_html.py", "github:lipic/wattrouter_tst/main/template/energyChart_html.py"],
+    ["template/overview_html.py", "github:lipic/wattrouter_tst/main/template/overview_html.py"],
+    ["template/powerChart_html.py", "github:lipic/wattrouter_tst/main/template/powerChart_html.py"],
+    ["template/settings_html.py", "github:lipic/wattrouter_tst/main/template/settings_html.py"],
+    ["inverters/base.py", "github:lipic/lipic/wattrouter_tst/main/inverters/base.py"],
+    ["inverters/goodwe.py", "github:lipic/lipic/wattrouter_tst/main/inverters/goodwe.py"],
+    ["inverters/huawei.py", "github:lipic/lipic/wattrouter_tst/main/inverters/huawei.py"],
+    ["inverters/infigy.py", "github:lipic/lipic/wattrouter_tst/main/inverters/infigy.py"],
+    ["inverters/sofar.py", "github:lipic/lipic/wattrouter_tst/main/inverters/sofar.py"],
+    ["inverters/solax.py", "github:lipic/lipic/wattrouter_tst/main/inverters/solax.py"],
+    ["inverters/victron.py", "github:lipic/lipic/wattrouter_tst/main/inverters/victron.py"]
+
+  ]
+}
