@@ -78,7 +78,7 @@ class Regulation:
         # vypocet sekund se ma nahrivat ranni boost, pocitejme ze 1/4 v bojleru zustala, takze 3/4
         self.sec_morning_boost = self.tuv_energy_night * 3600 * 3 / 4 / int(self.config.data['in,TUV-POWER'])
 
-        self.logger.debug("Power = {}W".format(power))
+        #self.logger.debug("Power = {}W".format(power))
 
         self.soc_off = self.get_soc_lock(soc)
 
@@ -87,14 +87,14 @@ class Regulation:
             # regulace podle pretoku celych periodach 20ms
             if power < self.overflow_limit:
                 self.delay = 0
-                self.logger.debug("Přidávám")
+                #self.logger.debug("Přidávám")
                 if power < (-self.power_hyst):
                     self.target_power += self.power_step
                     if self.target_power > int(self.config.data['in,TUV-POWER']):
                         self.target_power = int(self.config.data['in,TUV-POWER'])
             elif power > (self.overflow_limit + self.power_hyst):
                 self.delay = 0
-                self.logger.debug("Ubírám")
+                #self.logger.debug("Ubírám")
                 self.target_power -= self.power_step
                 if self.target_power < 0:
                     self.target_power = 0
@@ -127,30 +127,30 @@ class Regulation:
 
             if self.get_boost_status(actual_time):
                 self.target_power = int(self.config.data['in,TUV-POWER'])
-                self.logger.debug("SSR sepnuto casovym boostem")
+                #self.logger.debug("SSR sepnuto casovym boostem")
 
         elif int(self.config.data['btn,BOOST-MODE']) == MODE_HDO:
 
             if self.wattmeter.data_layer.data['HDO'] != 0:
                 self.target_power = int(self.config.data['in,TUV-POWER'])
-                self.logger.debug("SSR sepnuto HDOckem")
+                #self.logger.debug("SSR sepnuto HDOckem")
 
         elif int(self.config.data['btn,BOOST-MODE']) == MODE_HDO_BOOST:
             if self.get_boost_status(actual_time) and self.wattmeter.data_layer.data['HDO'] != 0:
                 self.target_power = int(self.config.data['in,TUV-POWER'])
-                self.logger.debug("ssr sepnuto casovym boostem a soucasne HDO")
+                #self.logger.debug("ssr sepnuto casovym boostem a soucasne HDO")
 
         # manualni boost talcitkem v apce
         if int(self.config.data['BOOST']):
             self.target_power = int(self.config.data['in,TUV-POWER'])
-            self.logger.debug("SSR sepnuto manualne v overview")
+            #self.logger.debug("SSR sepnuto manualne v overview")
 
         # strida
         self.target_duty = int((self.target_power / int(self.config.data['in,TUV-POWER'])) * 1024)
         if self.target_duty > PWM_MAX:
             self.target_duty = PWM_MAX
-        self.logger.debug("Target duty: {}".format(self.target_duty))
-        self.logger.debug("Target power: {}W".format(self.target_power))
+        #self.logger.debug("Target duty: {}".format(self.target_duty))
+        #self.logger.debug("Target power: {}W".format(self.target_power))
         self.ssr1.duty(self.target_duty)
 
     def get_boost_status(self, time_sec: int) -> bool:

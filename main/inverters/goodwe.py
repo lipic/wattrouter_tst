@@ -1,5 +1,8 @@
 from main.inverters.base import BaseInverter
 from umodbus.tcp import TCP
+from gc import collect
+
+collect()
 
 
 class Goodwe(BaseInverter):
@@ -28,15 +31,28 @@ class Goodwe(BaseInverter):
                 self.data_layer.data["ip"] = self.set_ip_address
 
             except Exception as e:
-                self.logger.error(f"Modbus TCP error {e}")
+                if e.errno == 128:
+                    self.logger.error("Socket not connected (ENOTCONN)")
+                    self.reconnect_error_cnt = 10
+                elif e.errno == 116:
+                    self.logger.error("Socket timeout (ETIMEDOUT)")
+                elif e.errno == 104:
+                    self.logger.error("Socket connection reset (ECONNRESET)")
+                else:
+                    self.logger.error(f"Modbus TCP error: {e}")
+
                 self.reconnect_error_cnt += 1
                 if self.reconnect_error_cnt > self.max_reconnect_error_cnt:
-                    await self.try_reconnect(modbus_port=self.modbus_port,
-                                             ip_address=self.set_ip_address,
-                                             slave_addr=1,
-                                             starting_addr=self.device_type,
-                                             number_of_reg=5,
-                                             callback=self.check_msg)
+                    self.data_layer.data["status"] = 2
+                    self.modbus_tcp = await self.try_reconnect(modbus_port=self.modbus_port,
+                                                               ip_address=self.set_ip_address,
+                                                               slave_addr=1,
+                                                               starting_addr=self.device_type,
+                                                               number_of_reg=5,
+                                                               callback=self.check_msg)
+                    collect()
+        else:
+            await self.inverter.scann()
 
     async def scann(self) -> None:
         self.data_layer.data["status"] = 2
@@ -46,20 +62,24 @@ class Goodwe(BaseInverter):
                                                        starting_addr=self.device_type,
                                                        number_of_reg=5,
                                                        callback=self.check_msg)
+        collect()
 
     def process_msg(self, response: tuple, starting_addr: int) -> None:
         if starting_addr == 36055 and len(response) > 2:
             self.data_layer.data["u1"] = self.wattmeter.data_layer.data["U1"]
-            self.data_layer.data["i1"] = int(response[0])*10 if self.data_layer.data["p1"] > 0 else int(response[0])*-10
+            self.data_layer.data["i1"] = int(response[0]) * 10 if self.data_layer.data["p1"] > 0 else int(
+                response[0]) * -10
             self.data_layer.data["u2"] = self.wattmeter.data_layer.data["U2"]
-            self.data_layer.data["i2"] = int(response[1])*10 if self.data_layer.data["p2"] > 0 else int(response[1])*-10
+            self.data_layer.data["i2"] = int(response[1]) * 10 if self.data_layer.data["p2"] > 0 else int(
+                response[1]) * -10
             self.data_layer.data["u3"] = self.wattmeter.data_layer.data["U3"]
-            self.data_layer.data["i3"] = int(response[2])*10 if self.data_layer.data["p3"] > 0 else int(response[2])*-10
+            self.data_layer.data["i3"] = int(response[2]) * 10 if self.data_layer.data["p3"] > 0 else int(
+                response[2]) * -10
 
         if starting_addr == 36005 and len(response) > 2:
-            self.data_layer.data["p1"] = (response[0] - 65535)*-1 if response[0] > 32767 else response[0]*-1
-            self.data_layer.data["p2"] = (response[1] - 65535)*-1 if response[1] > 32767 else response[1]*-1
-            self.data_layer.data["p3"] = (response[2] - 65535)*-1 if response[2] > 32767 else response[2]*-1
+            self.data_layer.data["p1"] = (response[0] - 65535) * -1 if response[0] > 32767 else response[0] * -1
+            self.data_layer.data["p2"] = (response[1] - 65535) * -1 if response[1] > 32767 else response[1] * -1
+            self.data_layer.data["p3"] = (response[2] - 65535) * -1 if response[2] > 32767 else response[2] * -1
 
         elif starting_addr == 37007 and len(response) > 0:
             self.data_layer.data["soc"] = response[0]

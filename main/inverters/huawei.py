@@ -1,5 +1,8 @@
 from main.inverters.base import BaseInverter
 from umodbus.tcp import TCP
+from gc import collect
+
+collect()
 
 
 class Huawei(BaseInverter):
@@ -24,16 +27,28 @@ class Huawei(BaseInverter):
                 self.data_layer.data["ip"] = self.set_ip_address
 
             except Exception as e:
-                self.logger.error(f"Modbus TCP error: {e}")
+                if e.errno == 128:
+                    self.logger.error("Socket not connected (ENOTCONN)")
+                    self.reconnect_error_cnt = 10
+                elif e.errno == 116:
+                    self.logger.error("Socket timeout (ETIMEDOUT)")
+                elif e.errno == 104:
+                    self.logger.error("Socket connection reset (ECONNRESET)")
+                else:
+                    self.logger.error(f"Modbus TCP error: {e}")
+
                 self.reconnect_error_cnt += 1
                 if self.reconnect_error_cnt > self.max_reconnect_error_cnt:
                     self.data_layer.data["status"] = 2
-                    await self.try_reconnect(modbus_port=self.modbus_port,
-                                             ip_address=self.set_ip_address,
-                                             slave_addr=1,
-                                             starting_addr=self.device_type,
-                                             number_of_reg=15,
-                                             callback=self.check_msg)
+                    self.modbus_tcp = await self.try_reconnect(modbus_port=self.modbus_port,
+                                                               ip_address=self.set_ip_address,
+                                                               slave_addr=1,
+                                                               starting_addr=self.device_type,
+                                                               number_of_reg=15,
+                                                               callback=self.check_msg)
+                    collect()
+        else:
+            await self.inverter.scann()
 
     async def scann(self) -> None:
         self.data_layer.data["status"] = 2
@@ -43,6 +58,7 @@ class Huawei(BaseInverter):
                                                        starting_addr=self.device_type,
                                                        number_of_reg=15,
                                                        callback=self.check_msg)
+        collect()
 
     def process_msg(self, response: tuple, starting_addr: int) -> None:
 
@@ -58,7 +74,7 @@ class Huawei(BaseInverter):
             self.data_layer.data["p3"] = int((self.data_layer.data["u3"] * self.data_layer.data["i3"]) / 100)
 
         elif starting_addr == 37004:
-            self.data_layer.data["soc"] = int(response[0]/10)
+            self.data_layer.data["soc"] = int(response[0] / 10)
 
     def check_msg(self, result: tuple) -> bool:
         device_type = ''
@@ -82,4 +98,3 @@ class Huawei(BaseInverter):
 
     def bms_register_table(self) -> dict:
         return {"soc": 37004}
-

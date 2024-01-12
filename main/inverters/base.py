@@ -36,8 +36,7 @@ class BaseInverter:
     def process_msg(self):
         raise NotImplementedError("Implement me!")
 
-    async def scan_ip_address(self, ip_address: str, modbus_port: int, slave_addr: int, starting_addr: int,
-                              number_of_reg: int, clbck: callable) -> TCP | None:
+    async def scan_ip_address(self, ip_address: str, modbus_port: int, slave_addr: int, starting_addr: int, number_of_reg: int, clbck: callable) -> TCP | None:
         reader = None
         writer = None
         try:
@@ -67,11 +66,9 @@ class BaseInverter:
         await writer.wait_closed()
         return None
 
-    async def scan_network(self, modbus_port: int, ip_address: str, slave_addr: int, starting_addr: int,
-                           number_of_reg: int, callback: callable) -> TCP:
+    async def scan_network(self, modbus_port: int, ip_address: str, slave_addr: int, starting_addr: int, number_of_reg: int, callback: callable) -> TCP:
         if self.set_ip_address != '0':
-            response = await self.try_reconnect(modbus_port, self.set_ip_address, slave_addr, starting_addr,
-                                                number_of_reg, callback)
+            response = await self.try_reconnect(modbus_port, self.set_ip_address, slave_addr, starting_addr, number_of_reg, callback)
             if response is not None:
                 return response
 
@@ -91,13 +88,11 @@ class BaseInverter:
                 self.logger.info(e)
         self.connection_status = UNCONNECTED
 
-    async def try_reconnect(self, modbus_port: int, ip_address: str, slave_addr: int, starting_addr: int,
-                            number_of_reg: int, callback: callable) -> TCP | None:
+    async def try_reconnect(self, modbus_port: int, ip_address: str, slave_addr: int, starting_addr: int, number_of_reg: int, callback: callable) -> TCP | None:
         for i in range(0, 5):
             try:
                 self.logger.info(f"Try to reconnect on ip address: {ip_address}")
-                result = await self.scan_ip_address(ip_address, modbus_port, slave_addr, starting_addr, number_of_reg,
-                                                    callback)
+                result = await self.scan_ip_address(ip_address, modbus_port, slave_addr, starting_addr, number_of_reg, callback)
                 if result is not None:
                     self.logger.info(f"Device found on ip address: {ip_address}")
                     return result

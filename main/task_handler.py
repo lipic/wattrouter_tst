@@ -44,8 +44,8 @@ class TaskHandler:
             from main.inverters.infigy import Infigy
             self.inverter = Infigy(wifi, self.config)
         elif int(self.config.data['bti,INVERTER-TYPE']) == 6:
-            from main.inverters.sofar import Sofar
-            self.inverter = Sofar(wifi, self.config)
+            from main.inverters.rs485_tcp import RS485_Tcp
+            self.inverter = RS485_Tcp(wifi, self.config)
 
         self.web_server_app = web_server_app.WebServerApp(wifi, self.wattmeter, watt_interface, self.config, self.inverter)
         self.setting_after_new_connection: bool = False
@@ -63,12 +63,6 @@ class TaskHandler:
             self.logger.setLevel(ulogging.DEBUG)
         else:
             self.logger.setLevel(ulogging.INFO)
-
-    def mem_free(self) -> None:
-        before: int = mem_free()
-        collect()
-        after: int = mem_free()
-        # self.logger.debug("Memory before: {} & After: {}".format(before, after))
 
     async def led_handler(self) -> None:
         while True:
@@ -97,7 +91,7 @@ class TaskHandler:
                     self.logger.info("Error during time setting: {}".format(e))
 
             await asyncio.sleep(10)
-            self.mem_free()
+            collect()
 
     async def wifi_handler(self) -> None:
         while True:
@@ -130,7 +124,7 @@ class TaskHandler:
                 self.led_error_handler.add_state(WIFI_HANDLER_ERR)
                 self.errors |= WIFI_HANDLER_ERR
                 self.logger.info("wifi_handler exception : {}".format(e))
-            self.mem_free()
+            collect()
             await asyncio.sleep(2)
 
     async def interface_handler(self) -> None:
@@ -154,7 +148,7 @@ class TaskHandler:
         while True:
             self.config.data['ERRORS'] = str(self.errors)
             self.wdt.feed()
-            self.mem_free()
+            collect()
             await asyncio.sleep(1)
 
     async def inverter_handler(self) -> None:
