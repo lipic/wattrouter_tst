@@ -24,6 +24,7 @@ class TaskHandler:
     def __init__(self, wifi):
         self.config = __config__.Config()
         self.config.get_config()
+        wifi.wlan_sta.config(txpower=78)
         watt_interface = wattmeter_com_interface.Interface(115200, lock=Lock(30))
         self.wattmeter = wattmeter.Wattmeter(wattmeter_interface=watt_interface, config=self.config)
 
