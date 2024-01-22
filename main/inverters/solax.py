@@ -1,6 +1,7 @@
 from main.inverters.base import BaseInverter
 from umodbus.tcp import TCP
 from gc import collect
+from asyncio import sleep
 
 collect()
 
@@ -13,6 +14,7 @@ class Solax(BaseInverter):
         self.modbus_tcp: TCP = None
         self.device_type: int = 0x0
         self.data_layer.data["type"] = "Solax"
+        #self.reset_wifi_dongle()
 
     async def run(self):
         self.data_layer.data["status"] = self.connection_status
@@ -20,10 +22,10 @@ class Solax(BaseInverter):
             try:
                 response = self.modbus_tcp.read_input_registers(slave_addr=1, starting_addr=0x006A, register_qty=11)
                 self.process_msg(response, starting_addr=0x006A)
-
+                await sleep(1)
                 response = self.modbus_tcp.read_input_registers(slave_addr=1, starting_addr=0x0082, register_qty=6)
                 self.process_msg(response, starting_addr=0x0082)
-
+                await sleep(1)
                 response = self.modbus_tcp.read_input_registers(slave_addr=1, starting_addr=0x1C, register_qty=1)
                 self.process_msg(response, starting_addr=0x1C)
                 self.reconnect_error_cnt = 0
@@ -43,6 +45,7 @@ class Solax(BaseInverter):
                 self.reconnect_error_cnt += 1
                 if self.reconnect_error_cnt > self.max_reconnect_error_cnt:
                     self.data_layer.data["status"] = 2
+                    self.reset_wifi_dongle()
                     self.modbus_tcp = await self.try_reconnect(modbus_port=self.modbus_port,
                                                                ip_address=self.set_ip_address,
                                                                slave_addr=1,
@@ -51,9 +54,20 @@ class Solax(BaseInverter):
                                                                callback=self.check_msg)
                     collect()
         else:
-            await self.inverter.scann()
+            await self.scann()
+
+    def reset_wifi_dongle(self):
+        import urequests
+        collect()
+        self.logger.info(f"Try reset wifi dongle on ip address: {self.set_ip_address}")
+        url = f"http://{self.set_ip_address}"
+        response = urequests.get(url)
+        self.logger.info(response.text)
+        response.close()
+        collect()
 
     async def scann(self) -> None:
+        #self.reset_wifi_dongle()
         self.data_layer.data["status"] = 2
         self.modbus_tcp: TCP = await self.scan_network(modbus_port=self.modbus_port,
                                                        ip_address=self.wifi_manager.get_ip(),

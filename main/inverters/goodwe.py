@@ -1,6 +1,7 @@
 from main.inverters.base import BaseInverter
 from umodbus.tcp import TCP
 from gc import collect
+from asyncio import sleep
 
 collect()
 
@@ -20,10 +21,10 @@ class Goodwe(BaseInverter):
             try:
                 response = self.modbus_tcp.read_holding_registers(slave_addr=1, starting_addr=36055, register_qty=3)
                 self.process_msg(response, starting_addr=36055)
-
+                await sleep(1)
                 response = self.modbus_tcp.read_holding_registers(slave_addr=1, starting_addr=36005, register_qty=3)
                 self.process_msg(response, starting_addr=36005)
-
+                await sleep(1)
                 response = self.modbus_tcp.read_holding_registers(slave_addr=1, starting_addr=37007, register_qty=1)
                 self.process_msg(response, starting_addr=37007)
 
@@ -43,6 +44,7 @@ class Goodwe(BaseInverter):
 
                 self.reconnect_error_cnt += 1
                 if self.reconnect_error_cnt > self.max_reconnect_error_cnt:
+                    self.reconnect_error_cnt = 0
                     self.data_layer.data["status"] = 2
                     self.modbus_tcp = await self.try_reconnect(modbus_port=self.modbus_port,
                                                                ip_address=self.set_ip_address,
@@ -52,7 +54,7 @@ class Goodwe(BaseInverter):
                                                                callback=self.check_msg)
                     collect()
         else:
-            await self.inverter.scann()
+            await self.scann()
 
     async def scann(self) -> None:
         self.data_layer.data["status"] = 2
@@ -69,10 +71,10 @@ class Goodwe(BaseInverter):
             self.data_layer.data["u1"] = self.wattmeter.data_layer.data["U1"]
             self.data_layer.data["i1"] = int(response[0]) * 10 if self.data_layer.data["p1"] > 0 else int(
                 response[0]) * -10
-            self.data_layer.data["u2"] = self.wattmeter.data_layer.data["U2"]
+            self.data_layer.data["u2"] = self.wattmeter.data_layer.data["U1"]
             self.data_layer.data["i2"] = int(response[1]) * 10 if self.data_layer.data["p2"] > 0 else int(
                 response[1]) * -10
-            self.data_layer.data["u3"] = self.wattmeter.data_layer.data["U3"]
+            self.data_layer.data["u3"] = self.wattmeter.data_layer.data["U1"]
             self.data_layer.data["i3"] = int(response[2]) * 10 if self.data_layer.data["p3"] > 0 else int(
                 response[2]) * -10
 

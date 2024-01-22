@@ -36,11 +36,12 @@ class BaseInverter:
     def process_msg(self):
         raise NotImplementedError("Implement me!")
 
-    async def scan_ip_address(self, ip_address: str, modbus_port: int, slave_addr: int, starting_addr: int, number_of_reg: int, clbck: callable) -> TCP | None:
+    async def scan_ip_address(self, ip_address: str, modbus_port: int, slave_addr: int, starting_addr: int, number_of_reg: int, clbck: callable, timeout: int = 3) -> TCP | None:
         reader = None
         writer = None
+        self.data_layer.data["ip"] = ip_address
         try:
-            reader, writer = await asyncio.wait_for(asyncio.open_connection(ip_address, modbus_port), timeout=2)
+            reader, writer = await asyncio.wait_for(asyncio.open_connection(ip_address, modbus_port), timeout=timeout)
         except asyncio.TimeoutError:
             pass
         if writer is not None and reader is not None:

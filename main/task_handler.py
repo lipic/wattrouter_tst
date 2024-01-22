@@ -158,7 +158,7 @@ class TaskHandler:
                     await self.inverter.scann()
                 if self.inverter is not None:
                     await self.inverter.run()
-            await asyncio.sleep(3)
+            await asyncio.sleep(2)
 
     def main_task_handler_run(self) -> None:
         loop = asyncio.get_event_loop()

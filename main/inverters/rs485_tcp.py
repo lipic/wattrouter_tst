@@ -45,7 +45,7 @@ class RS485_Tcp(BaseInverter):
                                                                callback=self.check_msg)
                     collect()
         else:
-            await self.inverter.scann()
+            await self.scann()
 
     async def scann(self) -> None:
         self.data_layer.data["status"] = 2

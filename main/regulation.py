@@ -6,7 +6,7 @@ SSR1_PIN: int = 33
 SSR2_PIN: int = 23
 RELAY_PIN: int = 19
 
-FREQUENCY: int = 5
+FREQUENCY: int = 20
 WATTER_CONST: int = 4180
 MODE_OFF: int = 0
 MODE_HDO: int = 1
@@ -40,6 +40,10 @@ class Regulation:
         self.delay: int = 0
         self.overflow_checker_cnt: int = 0
         self.soc_off: bool = False
+        
+        self.relay_timeout_cnt: int = 0
+        self.last_minute: int = 0
+        
 
         self.target_duty: int = 0
         self.sec_night_boost: int = 0  # kolik sekund se musinahrivat aby se dosahlo teloty boostu
@@ -60,7 +64,7 @@ class Regulation:
 
         actual_time: int = hour * 3600 + minute * 60  # kolikata sekunda od pulnoci
 
-        self.power_step = int(self.config.data['in,TUV-POWER']) / (1000 / FREQUENCY / 20)  # 1000ms 20ms
+        self.power_step = int(self.config.data['in,TUV-POWER']) / (1000 / FREQUENCY / 20 * 2)  # 1000ms 20ms
         self.power_step_count = int(self.config.data['in,TUV-POWER']) / self.power_step
         self.power_hyst = self.power_step / 4  # hystereze regulace 1/4 minimalniho kroku
         self.overflow_limit = -int(self.config.data['in,OVERFLOW-OFFSET'])
@@ -83,8 +87,8 @@ class Regulation:
         self.soc_off = self.get_soc_lock(soc)
 
         self.delay += 1
-        if self.delay > 2:  # regulaci je potreba zpomalit, protoze jinak kmita
-            # regulace podle pretoku celych periodach 20ms
+        if self.delay > 0:  # regulaci zpomalit, jinak kmita
+            # regulace po periodach 20ms
             if power < self.overflow_limit:
                 self.delay = 0
                 #self.logger.debug("Přidávám")
@@ -105,15 +109,21 @@ class Regulation:
         if power < (-int(self.config.data['in,POWER-RELAY'])):
             if not self.soc_off:
                 if self.relay.value() == 0:
-                    self.relay_timeout_start = minute
+                    self.relay_timeout_cnt = int(self.config.data['in,TIMEOUT-RELAY'])
+                    self.last_minute = minute
                 self.relay.on()
                 self.wattmeter.data_layer.data["RELAY"] = 1
             else:
                 self.relay.off()
 
+        self.logger.debug(f"Power: {power}W, Minute: {minute}, timeout: {self.relay_timeout_cnt}, Relay: {self.relay.value()}, Target: {self.target_power}, Step: { self.power_step} ")
+
         if self.relay.value() == 1:
-            if (minute - self.relay_timeout_start) > int(self.data['in,TIMEOUT-RELAY']):
-                if (self.config.data['in,POWER-RELAY'] + power) > int(self.config.data['in,RELAY-LOAD']):
+            if self.last_minute != minute:
+                self.relay_timeout_cnt -= 1
+                self.last_minute = minute
+            if (self.relay_timeout_cnt < 1):
+                if (int(self.config.data['in,POWER-RELAY']) + power) > int(self.config.data['in,RELAY-LOAD']):
                     self.relay.off()
                     self.wattmeter.data_layer.data["RELAY"] = 0
 
@@ -174,3 +184,4 @@ class Regulation:
                 if (soc_stop + SOC_HYST) > 100:
                     if soc == 100:
                         return False
+        return False
