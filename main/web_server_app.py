@@ -155,9 +155,10 @@ class WebServerApp:
             client = self.wifi_manager.getSSID()
             datalayer = {}
             for i in client:
-                if client[i] > -86:
+                if client[i] > -86 and len(i) > 0:
                     datalayer[i] = client[i]
             datalayer["connectSSID"] = self.wifi_manager.getCurrentConnectSSID()
+
             yield from picoweb.start_response(resp, "application/json")
             yield from resp.awrite(json.dumps(datalayer))
 
