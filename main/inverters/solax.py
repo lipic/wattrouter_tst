@@ -45,7 +45,7 @@ class Solax(BaseInverter):
                 self.reconnect_error_cnt += 1
                 if self.reconnect_error_cnt > self.max_reconnect_error_cnt:
                     self.data_layer.data["status"] = 2
-                    self.reset_wifi_dongle()
+                    #self.reset_wifi_dongle()
                     self.modbus_tcp = await self.try_reconnect(modbus_port=self.modbus_port,
                                                                ip_address=self.set_ip_address,
                                                                slave_addr=1,
