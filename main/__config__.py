@@ -17,7 +17,7 @@ class Config:
         self.data['sw,AUTOMATIC UPDATE'] = '1'
         self.data['sw,TESTING SOFTWARE'] = '0'
         self.data['sw,Wi-Fi AP'] = '1'
-        self.data['sw,AC IN ACTIVE: HIGH'] = '0'
+        self.data['sw,AC IN ACTIVE: HIGH'] = '1'
 
         self.data['bt,RESET PV-ROUTER'] = '0'
         self.data['btn,BOOST-MODE'] = '0'

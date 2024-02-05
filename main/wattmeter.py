@@ -84,13 +84,13 @@ class Wattmeter:
                 if len(self.data_layer.data["Es"]) < 97:
                     self.data_layer.data["Es"].append(self.last_hour)
                     self.data_layer.data["Es"].append(self.data_layer.data['E1_P_hour'])
-                    self.data_layer.data["Es"].append(self.data_layer.data['E_SAVED'])
+                    self.data_layer.data["Es"].append(self.data_layer.data['E_TUV_hour'])
                     self.data_layer.data["Es"].append(self.data_layer.data['HDO'])
                 else:
                     self.data_layer.data["Es"] = self.data_layer.data["Es"][4:]
                     self.data_layer.data["Es"].append(self.last_hour)
                     self.data_layer.data["Es"].append(self.data_layer.data['E1_P_hour'])
-                    self.data_layer.data["Es"].append(self.data_layer.data['E_SAVED'])
+                    self.data_layer.data["Es"].append(self.data_layer.data['E_TUV_hour'])
                     self.data_layer.data["Es"].append(self.data_layer.data['HDO'])
 
                 self.data_layer.data["Es"][0] = len(self.data_layer.data["Es"])
@@ -98,11 +98,11 @@ class Wattmeter:
             else:
                 if len(self.data_layer.data["Es"]) < 97:
                     self.data_layer.data["Es"][len(self.data_layer.data["Es"]) - 3] = self.data_layer.data['E1_P_hour']
-                    self.data_layer.data["Es"][len(self.data_layer.data["Es"]) - 2] = self.data_layer.data['E_SAVED']
+                    self.data_layer.data["Es"][len(self.data_layer.data["Es"]) - 2] = self.data_layer.data['E_TUV_hour']
                     self.data_layer.data["Es"][len(self.data_layer.data["Es"]) - 1] = self.data_layer.data['HDO']
                 else:
                     self.data_layer.data["Es"][94] = self.data_layer.data['E1_P_hour']
-                    self.data_layer.data["Es"][95] = self.data_layer.data['E_SAVED']
+                    self.data_layer.data["Es"][95] = self.data_layer.data['E_TUV_hour']
                     self.data_layer.data["Es"][96] = self.data_layer.data['HDO']
 
         if (self.last_day != int(time.localtime()[2])) and self.time_init and self.time_offset:
@@ -206,7 +206,6 @@ class DataLayer:
         self.data['E_TUV_hour'] = 0
         self.data['E_TUV_day'] = 0
         self.data['E_TUV'] = 0
-        self.data['E_SAVED'] = 0
         self.data['P_REGULATION'] = 0
         self.data["Pm"] = [0]  # minute power
         self.data["Es"] = [0]  # Hour energy
