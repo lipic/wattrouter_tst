@@ -16,7 +16,7 @@
     ["inverters/huawei.py", "github:lipic/wattrouter_tst/main/inverters/huawei.py"],
     ["inverters/infigy.py", "github:lipic/wattrouter_tst/main/inverters/infigy.py"],
     ["inverters/solax.py", "github:lipic/wattrouter_tst/main/inverters/solax.py"],
-    ["inverters/victron.py", "github:lipic/wattrouter_tst/main/inverters/victron.py"]
+    ["inverters/victron.py", "github:lipic/wattrouter_tst/main/inverters/victron.py"],
     ["inverters/rs485_tcp.py", "github:lipic/wattrouter_tst/main/inverters/rs485_tcp.py"]
     ]
 }
