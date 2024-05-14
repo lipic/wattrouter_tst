@@ -40,6 +40,11 @@ class Config:
         self.data['bti,INVERTER-TYPE'] = '0'
         self.data['INVERTER_IP_ADDR'] = '0'
 
+        self.data['DHCP'] = '1'
+        self.data['STATIC_IP'] = '192.168.0.130'
+        self.data['DNS'] = '100.100.100.100'
+        self.data['MASK'] = '255.255.255.0'
+        self.data['GATEWAY'] = '192.168.0.1'
 
         self.data['BOOST'] = '0'
         self.data['ERRORS'] = '0'

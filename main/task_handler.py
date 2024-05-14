@@ -24,8 +24,13 @@ class TaskHandler:
     def __init__(self, wifi):
         self.config = __config__.Config()
         self.config.get_config()
+        self.wifi_manager = wifi
         watt_interface = wattmeter_com_interface.Interface(115200, lock=Lock(30))
         self.wattmeter = wattmeter.Wattmeter(wattmeter_interface=watt_interface, config=self.config)
+
+        if self.config.data['DHCP'] == '0':
+            print("== Setting static IP ==")
+            self.set_static_ip()
 
         self.inverter = None
         if int(self.config.data['bti,INVERTER-TYPE']) == 1:
@@ -50,7 +55,6 @@ class TaskHandler:
         self.web_server_app = web_server_app.WebServerApp(wifi, self.wattmeter, watt_interface, self.config, self.inverter)
         self.setting_after_new_connection: bool = False
         self.wdt = WDT(timeout=60000)
-        self.wifi_manager = wifi
         self.led_error_handler = led_handler.LedHandler(pin=21, on_time=1, off_time=2, delta=40)
         self.led_wifi_handler = led_handler.LedHandler(pin=22, on_time=1, off_time=2, delta=20)
         self.errors: int = 0
@@ -63,6 +67,16 @@ class TaskHandler:
             self.logger.setLevel(ulogging.DEBUG)
         else:
             self.logger.setLevel(ulogging.INFO)
+
+    def set_static_ip(self) -> None:
+        ssid: str = self.wifi_manager.wlan_sta.config('essid')
+        pwd: str = ""
+        profiles = self.wifi_manager.read_profiles()
+        if ssid in profiles:
+            pwd = profiles[ssid]
+        self.wifi_manager.disconnect()
+        self.wifi_manager.wlan_sta.ifconfig((self.config.data['STATIC_IP'], self.config.data['MASK'], self.config.data['GATEWAY'], self.config.data['DNS']))
+        self.wifi_manager.wlan_sta.connect(ssid, pwd)
 
     async def led_handler(self) -> None:
         while True:
